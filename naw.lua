@@ -65,22 +65,23 @@ end
 -- @param ... A list of components that are dependencies of this component.
 -- @field initFunction The init function passed to the constructor
 -- @field id A unique (over the lifetime of the program) component id (number). The component can be retrieved by id, by indexing the Component class: `naw.Component[compId]`.
--- @usage local PositionComponent = naw.Component(function(x, y)
--- @usage     return {x = x or 0, y = y or 0}
--- @usage end)
 -- @usage
--- @usage local VelocityComponent = naw.Component(function(x, y)
--- @usage     return {x = x or 0, y = y or 0}
--- @usage end, PositionComponent)
--- @usage
--- @usage local NameComponent = naw.Component(function(name)
--- @usage     return name
--- @usage end)
--- @usage
--- @usage -- [...]
--- @usage
--- @usage entity:addComponent(PositionComponent, 0, 0)
--- @usage entity:addComponent(NameComponent, "foo")
+-- @ local PositionComponent = naw.Component(function(x, y)
+-- @     return {x = x or 0, y = y or 0}
+-- @ end)
+-- @
+-- @ local VelocityComponent = naw.Component(function(x, y)
+-- @     return {x = x or 0, y = y or 0}
+-- @ end, PositionComponent)
+-- @
+-- @ local NameComponent = naw.Component(function(name)
+-- @     return name
+-- @ end)
+-- @
+-- @ -- [...]
+-- @
+-- @ entity:addComponent(PositionComponent, 0, 0)
+-- @ entity:addComponent(NameComponent, "foo")
 -- @see naw.Entity:addComponent
 naw.Component = class()
 
@@ -224,13 +225,14 @@ end
 -- @desc Returns an iterator over all entities in this world that have the specified component.
 -- @param componentClass The component class to filter the entities by.
 -- @return iterator
--- @usage function physicsSystem(world, dt)
--- @usage     for entity in world:foreachEntity(VelocityComponent) do
--- @usage         local pos, vel = entity[PositionComponent], entity[VelocityComponent]
--- @usage         pos.x = pos.x + vel.x * dt
--- @usage         pos.y = pos.y + vel.y * dt
--- @usage     end
--- @usage end
+-- @usage
+-- @ function physicsSystem(world, dt)
+-- @     for entity in world:foreachEntity(VelocityComponent) do
+-- @         local pos, vel = entity[PositionComponent], entity[VelocityComponent]
+-- @         pos.x = pos.x + vel.x * dt
+-- @         pos.y = pos.y + vel.y * dt
+-- @     end
+-- @ end
 function naw.World:foreachEntity(component)
     local list = self:componentPool(component).values
     local idx = #list + 1
