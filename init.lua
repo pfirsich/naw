@@ -1,2 +1,3 @@
 _prefix = (...):match("(.+%.)[^%.]+$") or ""
-return require(_prefix .. "naw")
+print(_prefix .. "naw.naw")
+return require(_prefix .. "naw.naw")
