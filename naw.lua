@@ -1,6 +1,6 @@
--- @module ecs
+-- @module naw
 -- @desc ECS module
-local ecs = {}
+local naw = {}
 
 -------------------------------------------- HELPERS -------------------------------------------
 
@@ -59,21 +59,21 @@ end
 
 ------------------------------------------- COMPONENT -------------------------------------------
 
--- @class ecs.Component
+-- @class naw.Component
 -- @desc This does not actually hold the data, but just declares a component type/component class.
--- @param initFunction The function that creates the component. It's arguments are forwarded from ecs.Entity:addComponent and the return value should be the actual component data.
+-- @param initFunction The function that creates the component. It's arguments are forwarded from naw.Entity:addComponent and the return value should be the actual component data.
 -- @param ... A list of components that are dependencies of this component.
 -- @field initFunction The init function passed to the constructor
--- @field id A unique (over the lifetime of the program) component id (number). The component can be retrieved by id, by indexing the Component class: `ecs.Component[compId]`.
--- @usage local PositionComponent = ecs.Component(function(x, y)
+-- @field id A unique (over the lifetime of the program) component id (number). The component can be retrieved by id, by indexing the Component class: `naw.Component[compId]`.
+-- @usage local PositionComponent = naw.Component(function(x, y)
 -- @usage     return {x = x or 0, y = y or 0}
 -- @usage end)
 -- @usage
--- @usage local VelocityComponent = ecs.Component(function(x, y)
+-- @usage local VelocityComponent = naw.Component(function(x, y)
 -- @usage     return {x = x or 0, y = y or 0}
 -- @usage end, PositionComponent)
 -- @usage
--- @usage local NameComponent = ecs.Component(function(name)
+-- @usage local NameComponent = naw.Component(function(name)
 -- @usage     return name
 -- @usage end)
 -- @usage
@@ -81,47 +81,47 @@ end
 -- @usage
 -- @usage entity:addComponent(PositionComponent, 0, 0)
 -- @usage entity:addComponent(NameComponent, "foo")
--- @see ecs.Entity:addComponent
-ecs.Component = class()
+-- @see naw.Entity:addComponent
+naw.Component = class()
 
 local componentCounter = 0
 
-function ecs.Component:initialize(initFunction, ...)
+function naw.Component:initialize(initFunction, ...)
     self.initFunction = initFunction
     componentCounter = componentCounter + 1
     self.id = componentCounter
-    ecs.Component[self.id] = self
+    naw.Component[self.id] = self
     self.dependencies = {...}
 end
 
 -------------------------------------------- ENTITY ---------------------------------------------
 
--- @class ecs.Entity
--- @desc Creates an entity without adding it to a world. Most of the time, you want to use `ecs.World:Entity()`.
--- @field id A unique (over the lifetime of the program) entity id (number). The entity can be retrieved by id, by indexing the Entity class: `ecs.Entity[entId]`.
+-- @class naw.Entity
+-- @desc Creates an entity without adding it to a world. Most of the time, you want to use `naw.World:Entity()`.
+-- @field id A unique (over the lifetime of the program) entity id (number). The entity can be retrieved by id, by indexing the Entity class: `naw.Entity[entId]`.
 -- @field world An array of all the worlds the entity lives in.
 -- @field components A table containing all the components the entity has. The keys are the component classes and the values are the component data. You may also access component data by just doing e.g. `entity[PositionComponent]`.
--- @see ecs.World:Entity
-ecs.Entity = class()
+-- @see naw.World:Entity
+naw.Entity = class()
 
 local entityCounter = 0
 
-function ecs.Entity:initialize()
+function naw.Entity:initialize()
     entityCounter = entityCounter + 1
     self.id = entityCounter
-    ecs.Entity[self.id] = self
+    naw.Entity[self.id] = self
     self.worlds = {}
     self.components = {} -- key == component class, value = component data
 end
 
--- @function ecs.Entity:addComponent
+-- @function naw.Entity:addComponent
 -- @desc The added component can be retrieved by indexing the entity itself: e.g. `entity[PositionComponent]`.
 -- @param componentClass The component class of the component to be added to the entity
 -- @param ... Arguments to be forwarded to the init function of the component class
 -- @return The component that was just created
--- @see ecs.Component
+-- @see naw.Component
 -- @usage local pos = entity:addComponent(PositionComponent, 0, 0)
-function ecs.Entity:addComponent(component, ...)
+function naw.Entity:addComponent(component, ...)
     assert(self[component] == nil, "Component already present")
     local componentData = component.initFunction(...)
     if type(componentData) == "table" then
@@ -142,9 +142,9 @@ function ecs.Entity:addComponent(component, ...)
     return componentData
 end
 
--- @function ecs.Entity:removeComponent
+-- @function naw.Entity:removeComponent
 -- @param componentClass The component class of the component to be removed
-function ecs.Entity:removeComponent(component)
+function naw.Entity:removeComponent(component)
     assert(self[component], "Trying to remove a non-existent component")
     self.components[component] = nil
     self[component] = nil
@@ -153,11 +153,11 @@ function ecs.Entity:removeComponent(component)
     end
 end
 
--- @function ecs.Entity:getComponent
+-- @function naw.Entity:getComponent
 -- @desc This will error if the component does not exist for that entity
 -- @param ... A list of component classes to return the component data from
 -- @usage local pos, vel = entity:getComponent(PositionComponent, VelocityComponent)
-function ecs.Entity:getComponent(...)
+function naw.Entity:getComponent(...)
     if select("#", ...) == 1 then
         local componentData = self[component]
         assert(componentData, "Attempt to get non-existent component")
@@ -167,10 +167,10 @@ function ecs.Entity:getComponent(...)
     end
 end
 
--- @function ecs.Entity:hasComponent
+-- @function naw.Entity:hasComponent
 -- @param ... A list of components to be checked for existence in the entity
 -- @return A boolean indicating whether the passed components are all present in the entity
-function ecs.Entity:hasComponent(...)
+function naw.Entity:hasComponent(...)
     if select("#", ...) == 1 then
         return self[component] ~= nil
     else
@@ -180,19 +180,19 @@ end
 
 --------------------------------------------- WORLD ---------------------------------------------
 
--- @class ecs.World
--- @field entities An instance of the internal `Set` class. A regular array with all the entities in this world can be found in `world.entities.values`. __Do not every modify the array or the Set itself manually!__ Use `ecs.World.addEntity` and `ecs.World.removeEntity` instead.
+-- @class naw.World
+-- @field entities An instance of the internal `Set` class. A regular array with all the entities in this world can be found in `world.entities.values`. __Do not every modify the array or the Set itself manually!__ Use `naw.World.addEntity` and `naw.World.removeEntity` instead.
 -- @desc This is where entities live
-ecs.World = class()
+naw.World = class()
 
-function ecs.World:initialize()
+function naw.World:initialize()
     self.entities = Set()
     self.componentPools = {} -- key = component.id, value = array of entities (Set)
 end
 
--- @function ecs.World:addEntity
+-- @function naw.World:addEntity
 -- @param entity The entity to add to the world
-function ecs.World:addEntity(entity)
+function naw.World:addEntity(entity)
     -- TODO: Ensure the entity is only added once, because otherwise *everything* breaks
     self.entities:insert(entity)
     table.insert(entity.worlds, self)
@@ -201,9 +201,9 @@ function ecs.World:addEntity(entity)
     end
 end
 
--- @function ecs.World:removeEntity
+-- @function naw.World:removeEntity
 -- @param entity The entity to remove from the world
-function ecs.World:removeEntity(entity)
+function naw.World:removeEntity(entity)
     self.entities:remove(entity)
     removeByValue(entity.worlds, self) -- entity.worlds is small, so I hope this is fast
     for component, _ in pairs(entity.components) do
@@ -211,7 +211,7 @@ function ecs.World:removeEntity(entity)
     end
 end
 
-function ecs.World:componentPool(component)
+function naw.World:componentPool(component)
     local pool = self.componentPools[component.id]
     if not pool then
         pool = Set()
@@ -220,7 +220,7 @@ function ecs.World:componentPool(component)
     return pool
 end
 
--- @function ecs.World:foreachEntity
+-- @function naw.World:foreachEntity
 -- @desc Returns an iterator over all entities in this world that have the specified component.
 -- @param componentClass The component class to filter the entities by.
 -- @return iterator
@@ -231,7 +231,7 @@ end
 -- @usage         pos.y = pos.y + vel.y * dt
 -- @usage     end
 -- @usage end
-function ecs.World:foreachEntity(component)
+function naw.World:foreachEntity(component)
     local list = self:componentPool(component).values
     local idx = #list + 1
     return function()
@@ -240,15 +240,15 @@ function ecs.World:foreachEntity(component)
     end
 end
 
--- @function ecs.World:Entity
+-- @function naw.World:Entity
 -- @desc Creates an entity and adds it to the world
 -- @return The entity created
 -- @usage local entity = world:Entity()
 -- @usage entity:addComponent(PositionComponent, 0, 0)
-function ecs.World:Entity()
-    local entity = ecs.Entity()
+function naw.World:Entity()
+    local entity = naw.Entity()
     self:addEntity(entity)
     return entity
 end
 
-return ecs
+return naw
