@@ -179,6 +179,21 @@ function naw.Entity:hasComponent(...)
     end
 end
 
+-- @function naw.Entity:destroy
+-- @desc Removes entity from all worlds, removes all components from the entity (so they can be collected) and invalidates the entity id.
+-- @
+-- @ **Entities can not be garbage collected before this function is called**. If you don't want to use an entity anymore, calling `world:removeEntity(entity)` is not enough.
+function naw.Entity:destroy()
+    for i = #self.worlds, 1, -1 do -- will be removed from while iterating
+        self.worlds[i]:removeEntity(self)
+    end
+    for component, _ in pairs(self.components) do
+        self:removeComponent(component)
+    end
+    naw.Entity[self.id] = nil
+    self.id = nil
+end
+
 --------------------------------------------- WORLD ---------------------------------------------
 
 -- @class naw.World
