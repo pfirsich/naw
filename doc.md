@@ -11,11 +11,11 @@ ECS module
 This does not actually hold the data, but just declares a component type/component class.
 
 **Constructor Arguments**:
-- *initFunction*: The function that creates the component. It's arguments are forwarded from naw.Entity:addComponent and the return value should be the actual component data.
+- *initFunction*: The function that creates the component. It's arguments are forwarded from `naw.Entity:addComponent` and the return value should be the actual component data. The environment of this function will contain the function `ensureComponent`, that wraps `ecs.Entity:ensureComponent` for the entity that the component is currently being added to. This is useful for auto-resovling potentially missing dependencies.
 - *...*: A list of components that are dependencies of this component.
 
 **Member variables**:
-- *initFunction*: The init function passed to the constructor
+- *initFunction*: The init function passed to the constructor.
 - *id*: A unique (over the lifetime of the program) component id (number). The component can be retrieved by id, by indexing the Component class: `naw.Component[compId]`.
 
 **Usage**:
@@ -25,6 +25,7 @@ local PositionComponent = naw.Component(function(x, y)
 end)
 
 local VelocityComponent = naw.Component(function(x, y)
+    ensureComponent(PositionComponent)
     return {x = x or 0, y = y or 0}
 end, PositionComponent)
 
@@ -34,11 +35,12 @@ end)
 
 -- [...]
 
-entity:addComponent(PositionComponent, 0, 0)
+local entity = world:Entity()
+entity:addComponent(VelocityComponent, 0, 0)
 entity:addComponent(NameComponent, "foo")
 ```
 
-**See also**: [naw.Entity:addComponent](#nawentityaddcomponent)
+**See also**: [naw.Entity:addComponent](#nawentityaddcomponent), [naw.Entity:ensureComponent](#nawentityensurecomponent)
 ## naw.Entity
 
 *[class]*
@@ -69,6 +71,15 @@ local pos = entity:addComponent(PositionComponent, 0, 0)
 ```
 
 **See also**: [naw.Component](#nawcomponent)
+### naw.Entity:ensureComponent
+
+*[function]*
+
+Exactly like `naw.Entity:addComponent`, but only adds it, if the component is not already present. If it is, this does nothing.
+
+This is mainly used to prepare component dependencies in init functions of components.
+
+**See also**: [naw.Entity:addComponent](#nawentityaddcomponent), [naw.Component](#nawcomponent)
 ### naw.Entity:removeComponent
 
 *[function]*

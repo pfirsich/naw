@@ -61,9 +61,9 @@ end
 
 -- @class naw.Component
 -- @desc This does not actually hold the data, but just declares a component type/component class.
--- @param initFunction The function that creates the component. It's arguments are forwarded from naw.Entity:addComponent and the return value should be the actual component data.
+-- @param initFunction The function that creates the component. It's arguments are forwarded from `naw.Entity:addComponent` and the return value should be the actual component data. The environment of this function will contain the function `ensureComponent`, that wraps `ecs.Entity:ensureComponent` for the entity that the component is currently being added to. This is useful for auto-resovling potentially missing dependencies.
 -- @param ... A list of components that are dependencies of this component.
--- @field initFunction The init function passed to the constructor
+-- @field initFunction The init function passed to the constructor.
 -- @field id A unique (over the lifetime of the program) component id (number). The component can be retrieved by id, by indexing the Component class: `naw.Component[compId]`.
 -- @usage
 -- @ local PositionComponent = naw.Component(function(x, y)
@@ -71,6 +71,7 @@ end
 -- @ end)
 -- @
 -- @ local VelocityComponent = naw.Component(function(x, y)
+-- @     ensureComponent(PositionComponent)
 -- @     return {x = x or 0, y = y or 0}
 -- @ end, PositionComponent)
 -- @
@@ -80,18 +81,22 @@ end
 -- @
 -- @ -- [...]
 -- @
--- @ entity:addComponent(PositionComponent, 0, 0)
+-- @ local entity = world:Entity()
+-- @ entity:addComponent(VelocityComponent, 0, 0)
 -- @ entity:addComponent(NameComponent, "foo")
 -- @see naw.Entity:addComponent
+-- @see naw.Entity:ensureComponent
 naw.Component = class()
 
 local componentCounter = 0
 
 function naw.Component:initialize(initFunction, ...)
-    self.initFunction = initFunction
     componentCounter = componentCounter + 1
     self.id = componentCounter
     naw.Component[self.id] = self
+    self.initFunction = initFunction
+    self.initFunctionEnv = setmetatable({}, {__index = _G})
+    setfenv(self.initFunction, self.initFunctionEnv)
     self.dependencies = {...}
 end
 
@@ -113,6 +118,7 @@ function naw.Entity:initialize()
     naw.Entity[self.id] = self
     self.worlds = {}
     self.components = {} -- key == component class, value = component data
+    self._ensureComponent = function(...) return self:ensureComponent(...) end
 end
 
 -- @function naw.Entity:addComponent
@@ -124,6 +130,7 @@ end
 -- @usage local pos = entity:addComponent(PositionComponent, 0, 0)
 function naw.Entity:addComponent(component, ...)
     assert(self[component] == nil, "Component already present")
+    component.initFunctionEnv.ensureComponent = self._ensureComponent
     local componentData = component.initFunction(...)
     if type(componentData) == "table" then
         setmetatable(componentData, {__index = component})
@@ -141,6 +148,16 @@ function naw.Entity:addComponent(component, ...)
     end
 
     return componentData
+end
+
+-- @function naw.Entity:ensureComponent
+-- @desc Exactly like `naw.Entity:addComponent`, but only adds it, if the component is not already present. If it is, this does nothing.
+-- @
+-- @ This is mainly used to prepare component dependencies in init functions of components.
+-- @see naw.Entity:addComponent
+-- @see naw.Component
+function naw.Entity:ensureComponent(component, ...)
+    return self[component] or self:addComponent(component, ...)
 end
 
 -- @function naw.Entity:removeComponent

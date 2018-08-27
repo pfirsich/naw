@@ -18,13 +18,17 @@ local VelocityComponent = ecs.Component(function(x, y)
     }
 end, PositionComponent)
 
+local ColorComponent = ecs.Component(function(color)
+    return color or {1, 1, 1}
+end)
+
 local RectangleRenderComponent = ecs.Component(function(width, height, color)
+    ensureComponent(ColorComponent, color)
     return {
         width = width or 100,
         height = height or 100,
-        color = color or {1, 1, 1},
     }
-end, PositionComponent)
+end, PositionComponent, ColorComponent)
 
 local world = ecs.World()
 
@@ -34,6 +38,7 @@ for i = 1, 100 do
     local entity = world:Entity()
     entity:addComponent(PositionComponent, randf(0, winW), randf(0, winH))
     entity:addComponent(VelocityComponent, randf(-1, 1) * speed, randf(-1, 1) * speed)
+    -- this adds the color component right away
     entity:addComponent(RectangleRenderComponent, nil, nil, {randf(0,1), randf(0,1), randf(0,1)})
 end
 
@@ -57,7 +62,7 @@ function rectangleRenderSystem(world)
     for entity in world:foreachEntity(RectangleRenderComponent) do
         local pos = entity[PositionComponent]
         local rect = entity[RectangleRenderComponent]
-        love.graphics.setColor(rect.color)
+        love.graphics.setColor(entity[ColorComponent])
         love.graphics.rectangle("fill", pos.x - rect.width/2, pos.y - rect.height/2,
                                 rect.width, rect.height)
     end
