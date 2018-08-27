@@ -99,6 +99,14 @@ local pos, vel = entity:getComponent(PositionComponent, VelocityComponent)
 
 **Return Value**: A boolean indicating whether the passed components are all present in the entity
 
+### naw.Entity:destroy
+
+*[function]*
+
+Removes entity from all worlds, removes all components from the entity (so they can be collected) and invalidates the entity id.
+
+**Entities can not be garbage collected before this function is called**. If you don't want to use an entity anymore, calling `world:removeEntity(entity)` is not enough.
+
 ## naw.World
 
 *[class]*
