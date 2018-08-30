@@ -91,25 +91,46 @@ This is mainly used to prepare component dependencies in init functions of compo
 
 *[function]*
 
-This will error if the component does not exist for that entity
+This will error if the component does not exist for this entity
 
 **Parameters**:
-- *...*: A list of component classes to return the component data from
+- *componentClass*: The component class to get the component data of.
+
+### naw.Entity:getComponents
+
+*[function]*
+
+This is a variant of `naw.Entity:getComponent`, but takes a number of component classes and returns the component for each.
+
+**Parameters**:
+- *...*: A list of component classes to return the component data of.
 
 **Usage**:
 ```lua
-local pos, vel = entity:getComponent(PositionComponent, VelocityComponent)
+local pos, vel = entity:getComponents(PositionComponent, VelocityComponent)
 ```
 
+**See also**: [naw.Entity:getComponent](#nawentitygetcomponent)
 ### naw.Entity:hasComponent
 
 *[function]*
 
 **Parameters**:
-- *...*: A list of components to be checked for existence in the entity
+- *componentClass*: The component class to check for existence in the entity.
+
+**Return Value**: A boolean indicating whether the passed component is present in the entity.
+
+**See also**: [naw.Entity:hasComponents](#nawentityhascomponents)
+### naw.Entity:hasComponents
+
+*[function]*
+
+**Parameters**:
+- *...*: A list of components to be checked for existence in the entity.
 
 **Return Value**: A boolean indicating whether the passed components are all present in the entity
 
+**See also**: [naw.Entity:hasComponent](#nawentityhascomponent)
 ### naw.Entity:destroy
 
 *[function]*

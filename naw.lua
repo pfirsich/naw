@@ -132,6 +132,7 @@ function naw.Entity:addComponent(component, ...)
     assert(self[component] == nil, "Component already present")
     component.initFunctionEnv.ensureComponent = self._ensureComponent
     local componentData = component.initFunction(...)
+    assert(componentData ~= nil, "Component data must not be nil.") -- so self[component] is ~= nil
     if type(componentData) == "table" then
         setmetatable(componentData, {__index = component})
     end
@@ -157,13 +158,13 @@ end
 -- @see naw.Entity:addComponent
 -- @see naw.Component
 function naw.Entity:ensureComponent(component, ...)
-    return self[component] or self:addComponent(component, ...)
+    return self[component] ~= nil and self[component] or self:addComponent(component, ...)
 end
 
 -- @function naw.Entity:removeComponent
 -- @param componentClass The component class of the component to be removed
 function naw.Entity:removeComponent(component)
-    assert(self[component], "Trying to remove a non-existent component")
+    assert(self[component] ~= nil, "Trying to remove a non-existent component")
     self.components[component] = nil
     self[component] = nil
     for i = 1, #self.worlds do
@@ -172,27 +173,45 @@ function naw.Entity:removeComponent(component)
 end
 
 -- @function naw.Entity:getComponent
--- @desc This will error if the component does not exist for that entity
--- @param ... A list of component classes to return the component data from
--- @usage local pos, vel = entity:getComponent(PositionComponent, VelocityComponent)
-function naw.Entity:getComponent(...)
+-- @param componentClass The component class to get the component data of.
+-- @desc This will error if the component does not exist for this entity
+-- @see naw.Entity:getComponents
+function naw.Entity:getComponent(componentClass)
+    local componentData = self[componentClass]
+    assert(self[componentClass] ~= nil, "Attempt to get non-existent component")
+    return componentData
+end
+
+-- @function naw.Entity:getComponents
+-- @desc This is a variant of `naw.Entity:getComponent`, but takes a number of component classes and returns the component for each.
+-- @param ... A list of component classes to return the component data of.
+-- @usage local pos, vel = entity:getComponents(PositionComponent, VelocityComponent)
+-- @see naw.Entity:getComponent
+function naw.Entity:getComponents(...)
     if select("#", ...) == 1 then
-        local componentData = self[component]
-        assert(componentData, "Attempt to get non-existent component")
-        return componentData
+        return self:getComponent(...)
     else
-        return self[select(1, ...)], self:getComponent(select(2, ...))
+        return self:getComponent(...), self:getComponents(select(2, ...))
     end
 end
 
 -- @function naw.Entity:hasComponent
--- @param ... A list of components to be checked for existence in the entity
+-- @param componentClass The component class to check for existence in the entity.
+-- @return A boolean indicating whether the passed component is present in the entity.
+-- @see naw.Entity:hasComponents
+function naw.Entity:hasComponent(componentClass)
+    return self[componentClass] ~= nil
+end
+
+-- @function naw.Entity:hasComponents
+-- @param ... A list of components to be checked for existence in the entity.
 -- @return A boolean indicating whether the passed components are all present in the entity
-function naw.Entity:hasComponent(...)
+-- @see naw.Entity:hasComponent
+function naw.Entity:hasComponents(...)
     if select("#", ...) == 1 then
-        return self[component] ~= nil
+        return self:hasComponent(...)
     else
-        return self[select(1, ...)] ~= nil and self:hasComponent(select(2, ...))
+        return self:hasComponent(...) and self:hasComponents(select(2, ...))
     end
 end
 
