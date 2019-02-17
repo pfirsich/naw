@@ -48,9 +48,9 @@ entity:addComponent(NameComponent, "foo")
 Creates an entity without adding it to a world. Most of the time, you want to use `naw.World:Entity()`.
 
 **Member variables**:
-- *id*: A unique (over the lifetime of the program) entity id (number). The entity can be retrieved by id, by indexing the Entity class: `naw.Entity[entId]`.
+- *id*: A unique (over the lifetime of the program) entity id (number). The entity can be retrieved by id, by indexing the Entity class: `naw.Entity[entId]` or by indexing `World.entities[entId]`.
 - *world*: An array of all the worlds the entity lives in.
-- *components*: A table containing all the components the entity has. The keys are the component classes and the values are the component data. You may also access component data by just doing e.g. `entity[PositionComponent]`.
+- *components*: A table containing all the components the entity has. The keys are the component classes and the values should always be `true`.
 
 **See also**: [naw.World:Entity](#nawworldentity)
 ### naw.Entity:addComponent
@@ -96,6 +96,7 @@ This will error if the component does not exist for this entity
 **Parameters**:
 - *componentClass*: The component class to get the component data of.
 
+**See also**: [naw.Entity:getComponents](#nawentitygetcomponents)
 ### naw.Entity:getComponents
 
 *[function]*
@@ -146,7 +147,7 @@ Removes entity from all worlds, removes all components from the entity (so they 
 This is where entities live
 
 **Member variables**:
-- *entities*: An instance of the internal `Set` class. A regular array with all the entities in this world can be found in `world.entities.values`. __Do not every modify the array or the Set itself manually!__ Use `naw.World.addEntity` and `naw.World.removeEntity` instead.
+- *entities*: A table that has entity ids as keys and entities as values
 
 ### naw.World:addEntity
 
