@@ -234,20 +234,20 @@ end
 --------------------------------------------- WORLD ---------------------------------------------
 
 -- @class naw.World
--- @field entities An instance of the internal `Set` class. A regular array with all the entities in this world can be found in `world.entities.values`. __Do not every modify the array or the Set itself manually!__ Use `naw.World.addEntity` and `naw.World.removeEntity` instead.
+-- @field entities A table that has entity ids as keys and entities as values
 -- @desc This is where entities live
 naw.World = class()
 
 function naw.World:initialize()
-    self.entities = Set()
+    self.entities = {} -- should this be a weak table?
     self.componentPools = {} -- key = component.id, value = array of entities (Set)
 end
 
 -- @function naw.World:addEntity
 -- @param entity The entity to add to the world
 function naw.World:addEntity(entity)
-    -- TODO: Ensure the entity is only added once, because otherwise *everything* breaks
-    self.entities:insert(entity)
+    assert(self.entities[entity.id] == nil, "Attempt to add entity to the same world multiple times")
+    self.entities[entity.id] = entity
     table.insert(entity.worlds, self)
     for component, v in pairs(entity.components) do
         assert(v == true)
@@ -258,7 +258,7 @@ end
 -- @function naw.World:removeEntity
 -- @param entity The entity to remove from the world
 function naw.World:removeEntity(entity)
-    self.entities:remove(entity)
+    self.entities[entity.id] = nil
     removeByValue(entity.worlds, self) -- entity.worlds is small, so I hope this is fast
     for component, v in pairs(entity.components) do
         assert(v == true)
