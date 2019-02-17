@@ -104,9 +104,9 @@ end
 
 -- @class naw.Entity
 -- @desc Creates an entity without adding it to a world. Most of the time, you want to use `naw.World:Entity()`.
--- @field id A unique (over the lifetime of the program) entity id (number). The entity can be retrieved by id, by indexing the Entity class: `naw.Entity[entId]`.
+-- @field id A unique (over the lifetime of the program) entity id (number). The entity can be retrieved by id, by indexing the Entity class: `naw.Entity[entId]` or by indexing `World.entities[entId]`.
 -- @field world An array of all the worlds the entity lives in.
--- @field components A table containing all the components the entity has. The keys are the component classes and the values are the component data. You may also access component data by just doing e.g. `entity[PositionComponent]`.
+-- @field components A table containing all the components the entity has. The keys are the component classes and the values should always be `true`.
 -- @see naw.World:Entity
 naw.Entity = class()
 
@@ -117,7 +117,7 @@ function naw.Entity:initialize()
     self.id = entityCounter
     naw.Entity[self.id] = self
     self.worlds = {}
-    self.components = {} -- key == component class, value = component data
+    self.components = {} -- key = component class, value = true
     self._ensureComponent = function(...) return self:ensureComponent(...) end
 end
 
@@ -129,26 +129,23 @@ end
 -- @see naw.Component
 -- @usage local pos = entity:addComponent(PositionComponent, 0, 0)
 function naw.Entity:addComponent(component, ...)
-    assert(self[component] == nil, "Component already present")
+    assert(not self:hasComponent(component), "Component already present")
     component.initFunctionEnv.ensureComponent = self._ensureComponent
-    local componentData = component.initFunction(...)
-    assert(componentData ~= nil, "Component data must not be nil.") -- so self[component] is ~= nil
-    if type(componentData) == "table" then
-        setmetatable(componentData, {__index = component})
+    self[component] = component.initFunction(...)
+    if type(self[component]) == "table" then
+        setmetatable(self[component], {__index = component})
     end
+    self.components[component] = true
 
     for i = 1, #component.dependencies do
-        assert(self[component.dependencies[i]], "Component dependency not satisfied")
+        assert(self:hasComponent(component.dependencies[i]), "Component dependency not satisfied")
     end
-
-    self.components[component] = componentData
-    self[component] = componentData
 
     for i = 1, #self.worlds do
         self.worlds[i]:componentPool(component):insert(self)
     end
 
-    return componentData
+    return self[component]
 end
 
 -- @function naw.Entity:ensureComponent
@@ -158,15 +155,19 @@ end
 -- @see naw.Entity:addComponent
 -- @see naw.Component
 function naw.Entity:ensureComponent(component, ...)
-    return self[component] ~= nil and self[component] or self:addComponent(component, ...)
+    if self:hasComponent(component) then
+        return self[component]
+    else
+        return self:addComponent(component, ...)
+    end
 end
 
 -- @function naw.Entity:removeComponent
 -- @param componentClass The component class of the component to be removed
 function naw.Entity:removeComponent(component)
-    assert(self[component] ~= nil, "Trying to remove a non-existent component")
-    self.components[component] = nil
+    assert(self:hasComponent(component), "Trying to remove a non-existent component")
     self[component] = nil
+    self.components[component] = nil
     for i = 1, #self.worlds do
         self.worlds[i]:componentPool(component):remove(self)
     end
@@ -177,9 +178,8 @@ end
 -- @desc This will error if the component does not exist for this entity
 -- @see naw.Entity:getComponents
 function naw.Entity:getComponent(componentClass)
-    local componentData = self[componentClass]
-    assert(self[componentClass] ~= nil, "Attempt to get non-existent component")
-    return componentData
+    assert(self:hasComponent(componentClass), "Attempt to get non-existent component")
+    return self[componentClass]
 end
 
 -- @function naw.Entity:getComponents
@@ -200,7 +200,7 @@ end
 -- @return A boolean indicating whether the passed component is present in the entity.
 -- @see naw.Entity:hasComponents
 function naw.Entity:hasComponent(componentClass)
-    return self[componentClass] ~= nil
+    return self.components[componentClass]
 end
 
 -- @function naw.Entity:hasComponents
@@ -223,7 +223,8 @@ function naw.Entity:destroy()
     for i = #self.worlds, 1, -1 do -- will be removed from while iterating
         self.worlds[i]:removeEntity(self)
     end
-    for component, _ in pairs(self.components) do
+    for component, v in pairs(self.components) do
+        assert(v == true)
         self:removeComponent(component)
     end
     naw.Entity[self.id] = nil
@@ -248,7 +249,8 @@ function naw.World:addEntity(entity)
     -- TODO: Ensure the entity is only added once, because otherwise *everything* breaks
     self.entities:insert(entity)
     table.insert(entity.worlds, self)
-    for component, _ in pairs(entity.components) do
+    for component, v in pairs(entity.components) do
+        assert(v == true)
         self:componentPool(component):insert(entity)
     end
 end
@@ -258,7 +260,8 @@ end
 function naw.World:removeEntity(entity)
     self.entities:remove(entity)
     removeByValue(entity.worlds, self) -- entity.worlds is small, so I hope this is fast
-    for component, _ in pairs(entity.components) do
+    for component, v in pairs(entity.components) do
+        assert(v == true)
         self:componentPool(component):remove(entity)
     end
 end
